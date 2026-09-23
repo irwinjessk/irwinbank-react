@@ -1,0 +1,10 @@
+{
+  "env": {
+    "VITE_API_URL": "https://irwinbank-api.onrender.com",
+    "VITE_APP_NAME": "ADA BANK"
+  },
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/((?!assets/|favicon\\.svg|icons\\.svg).*)", "destination": "/index.html" }
+  ]
+}

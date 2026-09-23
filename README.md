@@ -23,3 +23,7 @@ L'application tourne sur http://localhost:5173. L'écran d'accueil est la connex
 ```bash
 npm run build
 ```
+
+## Déploiement
+
+`vercel.json` envoie le build Vite vers Vercel et pointe `VITE_API_URL` vers `https://irwinbank-api.onrender.com`. Importer le dépôt `irwinbank-react` dans Vercel, branche `main`.
