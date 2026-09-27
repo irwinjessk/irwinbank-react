@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { fetchMe, login as loginRequest } from '@/features/auth/api/auth-api'
 
 const TOKEN_KEY = 'ada_access'
@@ -23,6 +23,21 @@ export function AuthProvider({ children }) {
     setToken(null)
     setUser(null)
   }, [])
+
+  useEffect(() => {
+    if (!token) return undefined
+    let cancelled = false
+    fetchMe(token)
+      .then((me) => {
+        if (!cancelled) setUser(me)
+      })
+      .catch(() => {
+        if (!cancelled) logout()
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [token, logout])
 
   const value = useMemo(
     () => ({ token, user, login, logout, isAuthenticated: Boolean(token) }),
