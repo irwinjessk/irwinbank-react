@@ -6,7 +6,8 @@ import { useAuth } from '@/features/auth/context/auth-context'
 import { createBanque, listBanques, topBanques } from '@/features/banques/api/banques-api'
 
 export default function BanquesPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
   const [rows, setRows] = useState([])
   const [filtres, setFiltres] = useState({ pays: '', ville: '' })
   const [form, setForm] = useState({ nom: '', pays: '', ville: '' })
@@ -47,12 +48,14 @@ export default function BanquesPage() {
 
   return (
     <section className="space-y-6">
-      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4">
-        <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
-        <Field label="Pays"><input className={inputClass} value={form.pays} onChange={(e) => setForm({ ...form, pays: e.target.value })} required /></Field>
-        <Field label="Ville"><input className={inputClass} value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} required /></Field>
-        <div className="flex items-end"><Button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button></div>
-      </form>
+      {isAdmin ? (
+        <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4">
+          <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
+          <Field label="Pays"><input className={inputClass} value={form.pays} onChange={(e) => setForm({ ...form, pays: e.target.value })} required /></Field>
+          <Field label="Ville"><input className={inputClass} value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} required /></Field>
+          <div className="flex items-end"><Button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button></div>
+        </form>
+      ) : null}
       <form
         className="flex flex-wrap gap-2"
         onSubmit={(event) => {
