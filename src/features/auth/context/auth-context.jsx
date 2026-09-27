@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { fetchMe, login as loginRequest } from '@/features/auth/api/auth-api'
+import { SESSION_EXPIREE } from '@/lib/http'
 
 const TOKEN_KEY = 'ada_access'
 
@@ -23,6 +24,11 @@ export function AuthProvider({ children }) {
     setToken(null)
     setUser(null)
   }, [])
+
+  useEffect(() => {
+    window.addEventListener(SESSION_EXPIREE, logout)
+    return () => window.removeEventListener(SESSION_EXPIREE, logout)
+  }, [logout])
 
   useEffect(() => {
     if (!token) return undefined
