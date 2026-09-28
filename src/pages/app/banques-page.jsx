@@ -56,18 +56,20 @@ export default function BanquesPage() {
           <div className="flex items-end"><Button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button></div>
         </form>
       ) : null}
-      <form
-        className="flex flex-wrap gap-2"
-        onSubmit={(event) => {
-          event.preventDefault()
-          load(() => listBanques(token, filtres))
-        }}
-      >
-        <input className={inputClass} placeholder="Pays" value={filtres.pays} onChange={(e) => setFiltres({ ...filtres, pays: e.target.value })} />
-        <input className={inputClass} placeholder="Ville" value={filtres.ville} onChange={(e) => setFiltres({ ...filtres, ville: e.target.value })} />
-        <Button type="submit" variant="outline">Filtrer</Button>
-        <Button type="button" variant="outline" onClick={() => load(() => topBanques(token))}>Top 15</Button>
-      </form>
+      {isAdmin ? (
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(event) => {
+            event.preventDefault()
+            load(() => listBanques(token, filtres))
+          }}
+        >
+          <input className={inputClass} placeholder="Pays" value={filtres.pays} onChange={(e) => setFiltres({ ...filtres, pays: e.target.value })} />
+          <input className={inputClass} placeholder="Ville" value={filtres.ville} onChange={(e) => setFiltres({ ...filtres, ville: e.target.value })} />
+          <Button type="submit" variant="outline">Filtrer</Button>
+          <Button type="button" variant="outline" onClick={() => load(() => topBanques(token))}>Top 15</Button>
+        </form>
+      ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
         <DataTable
