@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import StatCard from '@/components/data/stat-card'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { listAgences, listAgentsAgence } from '@/features/agences/api/agences-api'
 import { useAuth } from '@/features/auth/context/auth-context'
-import { changerAgence, deleteClient, getClient, listClients, updateClient } from '@/features/clients/api/clients-api'
+import { archiverClient, changerAgence, getClient, listClients, restaurerClient, updateClient } from '@/features/clients/api/clients-api'
 import { cloturerCompte, listComptes, openCompte } from '@/features/comptes/api/comptes-api'
 import ClotureDialog from '@/features/comptes/components/cloture-dialog'
 import { listTransactions } from '@/features/operations/api/operations-api'
@@ -17,7 +17,6 @@ const libellesOperation = { DEPOT: 'Dépôt', RETRAIT: 'Retrait', VIREMENT: 'Vir
 
 export default function ClientDetailPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const { token, user } = useAuth()
   const [client, setClient] = useState(null)
   const [comptes, setComptes] = useState([])
@@ -35,6 +34,7 @@ export default function ClientDetailPage() {
   const [agents, setAgents] = useState([])
   const [nouvelleAgence, setNouvelleAgence] = useState('')
   const [moving, setMoving] = useState(false)
+  const [motifArchivage, setMotifArchivage] = useState(null)
 
   async function load() {
     try {
@@ -87,13 +87,25 @@ export default function ClientDetailPage() {
     }
   }
 
-  async function supprimer() {
-    if (!window.confirm(`Supprimer définitivement la fiche de ${client.prenom} ${client.nom} ?`)) return
+  async function archiver(event) {
+    event.preventDefault()
     setError('')
     setMessage('')
     try {
-      await deleteClient(token, id)
-      navigate('/app/clients', { replace: true })
+      setClient(await archiverClient(token, id, motifArchivage))
+      setMotifArchivage(null)
+      setMessage('Fiche archivée. Elle reste consultable et peut être restaurée.')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function restaurer() {
+    setError('')
+    setMessage('')
+    try {
+      setClient(await restaurerClient(token, id))
+      setMessage('Fiche restaurée.')
     } catch (err) {
       setError(err.message)
     }
@@ -148,6 +160,8 @@ export default function ClientDetailPage() {
   }
 
   const gerable = user?.role === 'ADMIN' || user?.agence_id === client.agence
+  const modifiable = gerable && !client.archive
+  const comptesOuverts = sesComptes.filter((compte) => compte.statut === 'OUVERT').length
 
   return (
     <section className="space-y-6">
@@ -183,7 +197,7 @@ export default function ClientDetailPage() {
                 {' · '}Conseiller : <span className="font-medium">{client.conseiller_nom || 'à désigner'}</span>
               </p>
             </div>
-            {gerable ? (
+            {modifiable ? (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -194,14 +208,43 @@ export default function ClientDetailPage() {
                 >
                   Modifier
                 </Button>
-                {sesComptes.length === 0 ? <Button variant="destructive" onClick={supprimer}>Supprimer</Button> : null}
+                <Button
+                  variant="outline"
+                  disabled={comptesOuverts > 0}
+                  title={comptesOuverts > 0 ? 'Clôturez d’abord les comptes ouverts' : undefined}
+                  onClick={() => {
+                    setMessage('')
+                    setMotifArchivage('')
+                  }}
+                >
+                  Archiver
+                </Button>
               </div>
             ) : null}
+            {gerable && client.archive ? <Button variant="outline" onClick={restaurer}>Restaurer</Button> : null}
           </div>
         )}
       </div>
 
-      {gerable ? (
+      {client.archive ? (
+        <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+          <span className="font-medium">Client archivé</span> le {new Date(client.date_archivage).toLocaleDateString('fr-FR')}
+          {client.archive_par_nom ? ` par ${client.archive_par_nom}` : ''} · motif : {client.motif_archivage}.
+          <span className="text-muted-foreground"> La fiche et son historique restent consultables, en lecture seule.</span>
+        </p>
+      ) : null}
+
+      {motifArchivage !== null ? (
+        <form onSubmit={archiver} className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
+          <Field label="Motif de l’archivage">
+            <input className={inputClass} value={motifArchivage} onChange={(e) => setMotifArchivage(e.target.value)} placeholder="Départ du client, décès, doublon…" required />
+          </Field>
+          <Button variant="destructive" disabled={!motifArchivage.trim()}>Confirmer l’archivage</Button>
+          <Button type="button" variant="outline" onClick={() => setMotifArchivage(null)}>Annuler</Button>
+        </form>
+      ) : null}
+
+      {client.archive ? null : modifiable ? (
         <form onSubmit={deplacer} className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
           <Field label="Changer d’agence">
             <select className={inputClass} value={nouvelleAgence} onChange={(e) => setNouvelleAgence(e.target.value)} required>
@@ -232,7 +275,7 @@ export default function ClientDetailPage() {
       <div className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-sm font-medium">Comptes</h3>
-          {gerable ? <form onSubmit={ouvrir} className="flex items-end gap-2">
+          {modifiable ? <form onSubmit={ouvrir} className="flex items-end gap-2">
             <select className={inputClass} value={typeCompte} onChange={(e) => setTypeCompte(e.target.value)} aria-label="Type de compte">
               <option value="COURANT">Courant</option>
               <option value="EPARGNE">Épargne</option>
@@ -250,7 +293,7 @@ export default function ClientDetailPage() {
             {
               key: 'action',
               label: '',
-              render: (row) => row.statut === 'OUVERT' && gerable ? (
+              render: (row) => row.statut === 'OUVERT' && modifiable ? (
                 <Button variant="outline" type="button" onClick={() => { setMessage(''); setACloturer(row) }}>Clôturer</Button>
               ) : '—',
             },

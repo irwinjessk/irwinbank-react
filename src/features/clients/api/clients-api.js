@@ -27,6 +27,10 @@ export function createClient(token, { agence, ...client }) {
   return apiFetch('/clients', { token, method: 'POST', body })
 }
 
-export function deleteClient(token, id) {
-  return apiFetch(`/clients/${id}`, { token, method: 'DELETE' })
+export function archiverClient(token, id, motif) {
+  return apiFetch(`/clients/${id}/archiver`, { token, method: 'POST', body: { motif } })
+}
+
+export function restaurerClient(token, id) {
+  return apiFetch(`/clients/${id}/restaurer`, { token, method: 'POST' })
 }

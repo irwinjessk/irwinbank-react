@@ -3,7 +3,7 @@ import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
-import { createBanque, deleteBanque, listBanques, topBanques, updateBanque } from '@/features/banques/api/banques-api'
+import { createBanque, listBanques, topBanques, updateBanque } from '@/features/banques/api/banques-api'
 
 export default function BanquesPage() {
   const { token, user } = useAuth()
@@ -131,17 +131,6 @@ export default function BanquesPage() {
                     onClick={() => action(() => updateBanque(token, row.id, { actif: !row.actif }), `Banque « ${row.nom} » ${row.actif ? 'désactivée' : 'réactivée'}.`)}
                   >
                     {row.actif ? 'Désactiver' : 'Réactiver'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => {
-                      if (window.confirm(`Supprimer définitivement la banque « ${row.nom} » ?`)) {
-                        action(() => deleteBanque(token, row.id), `Banque « ${row.nom} » supprimée.`)
-                      }
-                    }}
-                  >
-                    Supprimer
                   </Button>
                 </div>
               ),

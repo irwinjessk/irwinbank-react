@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
-import { createAgence, deleteAgence, listAgences, updateAgence } from '@/features/agences/api/agences-api'
+import { createAgence, listAgences, updateAgence } from '@/features/agences/api/agences-api'
 import ConseillersPanel from '@/features/agences/components/conseillers-panel'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { listBanques } from '@/features/banques/api/banques-api'
@@ -173,26 +173,13 @@ export default function AgencesPage() {
                     </Button>
                   ) : null}
                   {isAdmin && row.nom !== AGENCE_PRINCIPALE ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => action(() => updateAgence(token, row.id, { actif: !row.actif }), `Agence « ${row.nom} » ${row.actif ? 'désactivée' : 'réactivée'}.`)}
-                      >
-                        {row.actif ? 'Désactiver' : 'Réactiver'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => {
-                          if (window.confirm(`Supprimer l’agence « ${row.nom} » ?`)) {
-                            action(() => deleteAgence(token, row.id), `Agence « ${row.nom} » supprimée.`)
-                          }
-                        }}
-                      >
-                        Supprimer
-                      </Button>
-                    </>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => action(() => updateAgence(token, row.id, { actif: !row.actif }), `Agence « ${row.nom} » ${row.actif ? 'désactivée' : 'réactivée'}.`)}
+                    >
+                      {row.actif ? 'Désactiver' : 'Réactiver'}
+                    </Button>
                   ) : null}
                 </div>
               ),

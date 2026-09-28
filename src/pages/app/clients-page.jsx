@@ -18,7 +18,7 @@ export default function ClientsPage() {
   const [rows, setRows] = useState([])
   const [banques, setBanques] = useState([])
   const [agences, setAgences] = useState([])
-  const [recherche, setRecherche] = useState({ nom: '', email: '', numero_client: '' })
+  const [recherche, setRecherche] = useState({ nom: '', email: '', numero_client: '', statut: 'actifs' })
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -113,6 +113,11 @@ export default function ClientsPage() {
             <option key={agence.id} value={agence.id}>{isAdmin ? `${agence.banque_nom} · ${agence.nom}` : agence.nom}</option>
           ))}
         </select>
+        <select className={inputClass} value={recherche.statut} onChange={(e) => setRecherche({ ...recherche, statut: e.target.value })} aria-label="Statut des fiches">
+          <option value="actifs">Clients actifs</option>
+          <option value="archives">Clients archivés</option>
+          <option value="tous">Tous les clients</option>
+        </select>
         <Button type="submit" variant="outline">Rechercher</Button>
       </form>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -134,6 +139,7 @@ export default function ClientsPage() {
             { key: 'banque', label: 'Banque', render: (row) => row.banque_nom },
             { key: 'agence', label: 'Agence', render: (row) => row.agence_nom },
             { key: 'conseiller', label: 'Conseiller', render: (row) => row.conseiller_nom || '—' },
+            { key: 'statut', label: 'Statut', render: (row) => (row.archive ? 'Archivé' : 'Actif') },
             {
               key: 'fiche',
               label: '',

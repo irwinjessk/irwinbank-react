@@ -16,7 +16,3 @@ export function listAgentsAgence(token, id) {
 export function updateAgence(token, id, changements) {
   return apiFetch(`/agences/${id}`, { token, method: 'PATCH', body: changements })
 }
-
-export function deleteAgence(token, id) {
-  return apiFetch(`/agences/${id}`, { token, method: 'DELETE' })
-}
