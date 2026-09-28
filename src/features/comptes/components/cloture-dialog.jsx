@@ -73,7 +73,7 @@ export default function ClotureDialog({ compte, comptes, clients, onConfirm, onC
             ) : null}
             {form.mode_restitution ? (
               <p className="rounded-md bg-muted p-3 text-sm">
-                {formatMontant(compte.solde)} seront restitués au client ({modes[form.mode_restitution].toLowerCase()}), puis le compte sera clôturé. Une facture sera émise.
+                {formatMontant(compte.solde)} seront restitués au client ({modes[form.mode_restitution].charAt(0).toLowerCase() + modes[form.mode_restitution].slice(1)}), puis le compte sera clôturé. Une facture sera émise.
               </p>
             ) : null}
           </>
