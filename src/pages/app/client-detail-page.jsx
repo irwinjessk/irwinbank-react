@@ -29,6 +29,7 @@ export default function ClientDetailPage() {
   const [edition, setEdition] = useState(null)
   const [saving, setSaving] = useState(false)
   const [typeCompte, setTypeCompte] = useState('COURANT')
+  const [soldeInitial, setSoldeInitial] = useState('')
   const [opening, setOpening] = useState(false)
   const [aCloturer, setACloturer] = useState(null)
   const [agences, setAgences] = useState([])
@@ -133,8 +134,9 @@ export default function ClientDetailPage() {
     setError('')
     setOpening(true)
     try {
-      const compte = await openCompte(token, { client: id, type_compte: typeCompte })
-      setMessage(`Compte ${compte.numero_compte} ouvert.`)
+      const compte = await openCompte(token, { client: id, type_compte: typeCompte, solde_initial: soldeInitial })
+      setSoldeInitial('')
+      setMessage(`Compte ${compte.numero_compte} ouvert${Number(compte.solde) > 0 ? ` avec un dépôt initial de ${formatMontant(compte.solde)}` : ''}.`)
       await load()
     } catch (err) {
       setError(err.message)
@@ -283,6 +285,16 @@ export default function ClientDetailPage() {
               <option value="COURANT">Courant</option>
               <option value="EPARGNE">Épargne</option>
             </select>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className={`${inputClass} w-40`}
+              value={soldeInitial}
+              onChange={(e) => setSoldeInitial(e.target.value)}
+              placeholder="Solde initial"
+              aria-label="Solde initial (F CFA)"
+            />
             <Button disabled={opening}>{opening ? 'Ouverture…' : 'Ouvrir un compte'}</Button>
           </form> : null}
         </div>

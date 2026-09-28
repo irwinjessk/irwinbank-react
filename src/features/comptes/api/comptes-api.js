@@ -8,8 +8,10 @@ export function getCompte(token, id) {
   return apiFetch(`/comptes/${id}`, { token })
 }
 
-export function openCompte(token, { client, type_compte }) {
-  return apiFetch('/comptes', { token, method: 'POST', body: { client: Number(client), type_compte } })
+export function openCompte(token, { client, type_compte, solde_initial }) {
+  const body = { client: Number(client), type_compte }
+  if (solde_initial) body.solde_initial = solde_initial
+  return apiFetch('/comptes', { token, method: 'POST', body })
 }
 
 export function cloturerCompte(token, id, { motif, mode_restitution, compte_destinataire }) {

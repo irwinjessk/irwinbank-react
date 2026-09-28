@@ -14,7 +14,7 @@ export default function ComptesPage() {
   const { token } = useAuth()
   const [rows, setRows] = useState([])
   const [clients, setClients] = useState([])
-  const [form, setForm] = useState({ client: '', type_compte: 'COURANT' })
+  const [form, setForm] = useState({ client: '', type_compte: 'COURANT', solde_initial: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -47,9 +47,12 @@ export default function ComptesPage() {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    setMessage('')
     setSaving(true)
     try {
-      await openCompte(token, form)
+      const compte = await openCompte(token, form)
+      setForm({ ...form, solde_initial: '' })
+      setMessage(`Compte ${compte.numero_compte} ouvert${Number(compte.solde) > 0 ? ` avec un dépôt initial de ${formatMontant(compte.solde)}` : ''}.`)
       await load()
     } catch (err) {
       setError(err.message)
@@ -68,7 +71,7 @@ export default function ComptesPage() {
 
   return (
     <section className="space-y-6">
-      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-3">
+      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4">
         <Field label="Client">
           <select className={inputClass} value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} required>
             <option value="">Choisir</option>
@@ -80,6 +83,9 @@ export default function ComptesPage() {
             <option value="COURANT">Courant</option>
             <option value="EPARGNE">Épargne</option>
           </select>
+        </Field>
+        <Field label="Solde initial (F CFA)">
+          <input type="number" min="0" step="0.01" className={inputClass} value={form.solde_initial} onChange={(e) => setForm({ ...form, solde_initial: e.target.value })} placeholder="0" />
         </Field>
         <div className="flex items-end"><Button disabled={saving}>{saving ? 'Ouverture…' : 'Ouvrir'}</Button></div>
       </form>
