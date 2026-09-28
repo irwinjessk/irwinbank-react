@@ -4,6 +4,7 @@ import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { listAgences, createAgence } from '@/features/agences/api/agences-api'
+import ConseillersPanel from '@/features/agences/components/conseillers-panel'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { listBanques } from '@/features/banques/api/banques-api'
 
@@ -19,9 +20,10 @@ export default function AgencesPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [selection, setSelection] = useState(null)
 
-  async function load(filtreBanque = banque) {
-    setLoading(true)
+  async function load(filtreBanque = banque, silencieux = false) {
+    if (!silencieux) setLoading(true)
     setError('')
     try {
       setRows(await listAgences(token, { banque: filtreBanque }))
@@ -110,11 +112,26 @@ export default function AgencesPage() {
             {
               key: 'voir',
               label: '',
-              render: (row) => <Link to={`/app/clients?agence=${row.id}`} className="text-sm text-muted-foreground hover:underline">Ses clients →</Link>,
+              render: (row) => (
+                <div className="flex items-center justify-end gap-3">
+                  <Link to={`/app/clients?agence=${row.id}`} className="text-sm text-muted-foreground hover:underline">Ses clients →</Link>
+                  {isAdmin || row.id === user?.agence_id ? (
+                    <Button type="button" variant="outline" onClick={() => setSelection(row)}>Conseillers</Button>
+                  ) : null}
+                </div>
+              ),
             },
           ]}
         />
       )}
+      {selection ? (
+        <ConseillersPanel
+          token={token}
+          agence={selection}
+          onClose={() => setSelection(null)}
+          onChange={() => load(banque, true)}
+        />
+      ) : null}
     </section>
   )
 }

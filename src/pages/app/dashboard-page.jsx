@@ -3,6 +3,7 @@ import BarList from '@/components/data/bar-list'
 import StatCard from '@/components/data/stat-card'
 import { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
+import { listAgences } from '@/features/agences/api/agences-api'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { fetchDashboard } from '@/features/dashboard/api/dashboard-api'
 import { formatMontant } from '@/lib/money'
@@ -19,8 +20,9 @@ function Panel({ title, children }) {
 }
 
 export default function DashboardPage() {
-  const { token } = useAuth()
-  const [periode, setPeriode] = useState({ date_min: '', date_max: '' })
+  const { token, user } = useAuth()
+  const [periode, setPeriode] = useState({ date_min: '', date_max: '', agence: '' })
+  const [agences, setAgences] = useState([])
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,6 +41,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load()
+    listAgences(token).then(setAgences).catch((err) => setError(err.message))
   }, [token])
 
   const statut = (code) => data?.comptes_par_statut.find((ligne) => ligne.statut === code)?.nombre ?? 0
@@ -59,6 +62,17 @@ export default function DashboardPage() {
         <label className="text-xs text-muted-foreground">
           Au
           <input type="date" className={inputClass} value={periode.date_max} onChange={(e) => setPeriode({ ...periode, date_max: e.target.value })} />
+        </label>
+        <label className="text-xs text-muted-foreground">
+          Agence
+          <select className={inputClass} value={periode.agence} onChange={(e) => setPeriode({ ...periode, agence: e.target.value })}>
+            <option value="">{user?.role === 'ADMIN' ? 'Toutes les agences' : 'Toute ma banque'}</option>
+            {agences.map((agence) => (
+              <option key={agence.id} value={agence.id}>
+                {user?.role === 'ADMIN' ? `${agence.banque_nom} · ${agence.nom}` : agence.nom}
+              </option>
+            ))}
+          </select>
         </label>
         <Button type="submit" variant="outline">Appliquer</Button>
       </form>
