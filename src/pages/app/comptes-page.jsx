@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { listClients } from '@/features/clients/api/clients-api'
 import { cloturerCompte, listComptes, openCompte } from '@/features/comptes/api/comptes-api'
+import ClotureDialog from '@/features/comptes/components/cloture-dialog'
 import { formatMontant } from '@/lib/money'
 
 export default function ComptesPage() {
@@ -15,7 +16,8 @@ export default function ComptesPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [closingId, setClosingId] = useState(null)
+  const [aCloturer, setACloturer] = useState(null)
+  const [message, setMessage] = useState('')
 
   async function load() {
     setLoading(true)
@@ -47,17 +49,17 @@ export default function ComptesPage() {
     }
   }
 
-  async function close(id) {
+  async function confirmerCloture(choix) {
+    const compte = await cloturerCompte(token, aCloturer.id, choix)
+    setACloturer(null)
     setError('')
-    setClosingId(id)
-    try {
-      await cloturerCompte(token, id)
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setClosingId(null)
-    }
+    setMessage(`Compte ${compte.numero_compte} clôturé.`)
+    await load()
+  }
+
+  const nomClient = (id) => {
+    const client = clients.find((item) => item.id === id)
+    return client ? `${client.prenom} ${client.nom}` : '—'
   }
 
   return (
@@ -78,11 +80,22 @@ export default function ComptesPage() {
         <div className="flex items-end"><Button disabled={saving}>{saving ? 'Ouverture…' : 'Ouvrir'}</Button></div>
       </form>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {message ? <p className="text-sm text-primary">{message}</p> : null}
+      {aCloturer ? (
+        <ClotureDialog
+          compte={aCloturer}
+          comptes={rows}
+          clients={clients}
+          onConfirm={confirmerCloture}
+          onCancel={() => setACloturer(null)}
+        />
+      ) : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
         <DataTable
           rows={rows}
           columns={[
             { key: 'numero', label: 'Numéro', render: (row) => row.numero_compte },
+            { key: 'client', label: 'Client', render: (row) => nomClient(row.client) },
             { key: 'type', label: 'Type', render: (row) => row.type_compte },
             { key: 'solde', label: 'Solde', render: (row) => formatMontant(row.solde) },
             { key: 'statut', label: 'Statut', render: (row) => row.statut },
@@ -90,8 +103,8 @@ export default function ComptesPage() {
               key: 'action',
               label: '',
               render: (row) => row.statut === 'OUVERT' ? (
-                <Button variant="outline" type="button" disabled={closingId === row.id} onClick={() => close(row.id)}>
-                  {closingId === row.id ? 'Clôture…' : 'Clôturer'}
+                <Button variant="outline" type="button" onClick={() => { setMessage(''); setACloturer(row) }}>
+                  Clôturer
                 </Button>
               ) : '—',
             },

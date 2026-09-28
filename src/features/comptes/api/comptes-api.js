@@ -8,6 +8,9 @@ export function openCompte(token, { client, type_compte }) {
   return apiFetch('/comptes', { token, method: 'POST', body: { client: Number(client), type_compte } })
 }
 
-export function cloturerCompte(token, id) {
-  return apiFetch(`/comptes/${id}/cloturer`, { token, method: 'POST' })
+export function cloturerCompte(token, id, { motif, mode_restitution, compte_destinataire }) {
+  const body = { motif }
+  if (mode_restitution) body.mode_restitution = mode_restitution
+  if (mode_restitution === 'VIREMENT') body.compte_destinataire = Number(compte_destinataire)
+  return apiFetch(`/comptes/${id}/cloturer`, { token, method: 'POST', body })
 }
