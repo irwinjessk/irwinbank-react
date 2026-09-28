@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { accueilDe } from '@/features/auth/components/protected-route'
 import { useAuth } from '@/features/auth/context/auth-context'
 
 export default function LoginPage() {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, user, login } = useAuth()
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,8 +18,8 @@ export default function LoginPage() {
     setError('')
     setPending(true)
     try {
-      await login(username, password)
-      navigate('/app', { replace: true })
+      const me = await login(username.trim(), password)
+      navigate(accueilDe(me), { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -25,8 +27,8 @@ export default function LoginPage() {
     }
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/app" replace />
+  if (isAuthenticated && user) {
+    return <Navigate to={accueilDe(user)} replace />
   }
 
   return (
@@ -34,8 +36,9 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg border border-border bg-card p-6">
         <p className="text-xs tracking-[0.22em] text-accent">ADA BANK</p>
         <h1 className="mt-2 text-2xl font-semibold">Connexion</h1>
+        {state?.message ? <p className="mt-3 rounded-md bg-primary/10 p-2 text-sm text-primary">{state.message}</p> : null}
         <label className="mt-6 block text-sm text-muted-foreground" htmlFor="username">
-          Identifiant
+          Identifiant ou numéro client
         </label>
         <input
           id="username"
@@ -61,6 +64,10 @@ export default function LoginPage() {
         <Button className="mt-6 w-full" disabled={pending}>
           {pending ? 'Connexion…' : 'Se connecter'}
         </Button>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Client, première connexion ?{' '}
+          <Link to="/activer" className="text-primary hover:underline">Activer mon espace</Link>
+        </p>
       </form>
     </main>
   )

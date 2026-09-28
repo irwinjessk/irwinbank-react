@@ -8,6 +8,7 @@ import { listAgences, listAgentsAgence } from '@/features/agences/api/agences-ap
 import { useAuth } from '@/features/auth/context/auth-context'
 import { archiverClient, changerAgence, getClient, listClients, restaurerClient, updateClient } from '@/features/clients/api/clients-api'
 import { cloturerCompte, listComptes, openCompte } from '@/features/comptes/api/comptes-api'
+import EspacePanel from '@/features/clients/components/espace-panel'
 import ClotureDialog from '@/features/comptes/components/cloture-dialog'
 import { listTransactions } from '@/features/operations/api/operations-api'
 import { formatMontant } from '@/lib/money'
@@ -262,6 +263,8 @@ export default function ClientDetailPage() {
           Client d’une autre agence : vous pouvez effectuer ses dépôts et retraits au guichet (page Mouvements), mais pas modifier sa fiche ni ses comptes.
         </p>
       )}
+
+      <EspacePanel client={client} gerable={gerable} onChange={setClient} />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-primary">{message}</p> : null}

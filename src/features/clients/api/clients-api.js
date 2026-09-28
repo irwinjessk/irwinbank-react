@@ -34,3 +34,11 @@ export function archiverClient(token, id, motif) {
 export function restaurerClient(token, id) {
   return apiFetch(`/clients/${id}/restaurer`, { token, method: 'POST' })
 }
+
+export function activerEspaceClient(token, id) {
+  return apiFetch(`/clients/${id}/activer-espace`, { token, method: 'POST' })
+}
+
+export function desactiverEspaceClient(token, id) {
+  return apiFetch(`/clients/${id}/desactiver-espace`, { token, method: 'POST' })
+}

@@ -13,7 +13,7 @@ async function envoyer(path, { token, method = 'GET', body } = {}) {
     response = await fetch(urlDe(path), {
       method,
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
