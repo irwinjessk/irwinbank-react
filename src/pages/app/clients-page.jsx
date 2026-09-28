@@ -18,11 +18,12 @@ export default function ClientsPage() {
   const [rows, setRows] = useState([])
   const [banques, setBanques] = useState([])
   const [agences, setAgences] = useState([])
-  const [recherche, setRecherche] = useState({ nom: '', email: '', numero_client: '', statut: 'actifs' })
+  const [recherche, setRecherche] = useState({ nom: '', email: '', numero_client: '', statut: 'actifs', banque: '' })
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
 
   async function load(filtres = {}) {
     setLoading(true)
@@ -52,9 +53,11 @@ export default function ClientsPage() {
   async function submit(event) {
     event.preventDefault()
     setError('')
+    setMessage('')
     setSaving(true)
     try {
-      await createClient(token, form)
+      const client = await createClient(token, form)
+      setMessage(`${client.prenom} ${client.nom} inscrit (${client.numero_client}). Un e-mail de bienvenue lui est envoyé.`)
       setForm({ ...emptyForm, banque: isAdmin ? '' : form.banque })
       await load(recherche)
     } catch (err) {
@@ -102,6 +105,12 @@ export default function ClientsPage() {
         <input className={inputClass} placeholder="Nom, prénom" value={recherche.nom} onChange={(e) => setRecherche({ ...recherche, nom: e.target.value })} />
         <input className={inputClass} placeholder="E-mail" value={recherche.email} onChange={(e) => setRecherche({ ...recherche, email: e.target.value })} />
         <input className={inputClass} placeholder="Numéro client" value={recherche.numero_client} onChange={(e) => setRecherche({ ...recherche, numero_client: e.target.value })} />
+        {isAdmin ? (
+          <select className={inputClass} value={recherche.banque} onChange={(e) => setRecherche({ ...recherche, banque: e.target.value })} aria-label="Filtrer par banque">
+            <option value="">Toutes les banques</option>
+            {banques.map((banque) => <option key={banque.id} value={banque.id}>{banque.nom}</option>)}
+          </select>
+        ) : null}
         <select
           className={inputClass}
           value={agenceFiltre}
@@ -121,6 +130,7 @@ export default function ClientsPage() {
         <Button type="submit" variant="outline">Rechercher</Button>
       </form>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {message ? <p className="text-sm text-primary">{message}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
         <DataTable
           rows={rows}

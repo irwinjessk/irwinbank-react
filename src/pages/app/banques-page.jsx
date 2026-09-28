@@ -10,7 +10,7 @@ export default function BanquesPage() {
   const isAdmin = user?.role === 'ADMIN'
   const [rows, setRows] = useState([])
   const [filtres, setFiltres] = useState({ pays: '', ville: '' })
-  const [form, setForm] = useState({ nom: '', pays: '', ville: '' })
+  const [form, setForm] = useState({ nom: '', pays: '', ville: '', email: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -35,7 +35,7 @@ export default function BanquesPage() {
 
   function annulerEdition() {
     setEditId(null)
-    setForm({ nom: '', pays: '', ville: '' })
+    setForm({ nom: '', pays: '', ville: '', email: '' })
   }
 
   async function action(requete, succes) {
@@ -61,6 +61,7 @@ export default function BanquesPage() {
         setMessage(`Banque « ${form.nom} » mise à jour.`)
       } else {
         await createBanque(token, form)
+        setMessage(`Banque « ${form.nom} » enregistrée. Un e-mail de bienvenue est envoyé à ${form.email}.`)
       }
       annulerEdition()
       await load()
@@ -74,10 +75,13 @@ export default function BanquesPage() {
   return (
     <section className="space-y-6">
       {isAdmin ? (
-        <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4">
+        <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-5">
           <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
           <Field label="Pays"><input className={inputClass} value={form.pays} onChange={(e) => setForm({ ...form, pays: e.target.value })} required /></Field>
           <Field label="Ville"><input className={inputClass} value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} required /></Field>
+          <Field label="E-mail">
+            <input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required={!editId} />
+          </Field>
           <div className="flex items-end gap-2">
             <Button disabled={saving}>{saving ? 'Enregistrement…' : editId ? 'Mettre à jour' : 'Enregistrer'}</Button>
             {editId ? <Button type="button" variant="outline" onClick={annulerEdition}>Annuler</Button> : null}
@@ -107,6 +111,7 @@ export default function BanquesPage() {
             { key: 'nom', label: 'Nom', render: (row) => row.nom },
             { key: 'pays', label: 'Pays', render: (row) => row.pays },
             { key: 'ville', label: 'Ville', render: (row) => row.ville },
+            { key: 'email', label: 'E-mail', render: (row) => row.email || '—' },
             { key: 'clients', label: 'Clients', render: (row) => row.nombre_clients },
             { key: 'statut', label: 'Statut', render: (row) => (row.actif ? 'Active' : 'Désactivée') },
             ...(isAdmin ? [{
@@ -120,7 +125,7 @@ export default function BanquesPage() {
                     onClick={() => {
                       setMessage('')
                       setEditId(row.id)
-                      setForm({ nom: row.nom, pays: row.pays, ville: row.ville })
+                      setForm({ nom: row.nom, pays: row.pays, ville: row.ville, email: row.email ?? '' })
                     }}
                   >
                     Modifier

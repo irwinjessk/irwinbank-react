@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
@@ -134,7 +135,15 @@ export default function OperationsPage() {
             { key: 'date', label: 'Date', render: (row) => new Date(row.date_transaction).toLocaleString('fr-FR') },
             { key: 'type', label: 'Type', render: (row) => libellesOperation[row.type_transaction] },
             { key: 'montant', label: 'Montant', render: (row) => `${row.sens === 'CREDIT' ? '+' : '−'} ${formatMontant(row.montant)}` },
-            { key: 'compte', label: 'Compte', render: (row) => comptes.find((compte) => compte.id === row.compte)?.numero_compte ?? `#${row.compte}` },
+            {
+              key: 'compte',
+              label: 'Compte',
+              render: (row) => (
+                <Link to={`/app/comptes/${row.compte}`} className="hover:underline">
+                  {comptes.find((compte) => compte.id === row.compte)?.numero_compte ?? `#${row.compte}`}
+                </Link>
+              ),
+            },
             { key: 'description', label: 'Libellé', render: (row) => row.description || '—' },
           ]}
         />

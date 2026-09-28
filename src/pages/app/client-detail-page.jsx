@@ -286,7 +286,11 @@ export default function ClientDetailPage() {
         <DataTable
           rows={sesComptes}
           columns={[
-            { key: 'numero', label: 'Numéro', render: (row) => row.numero_compte },
+            {
+              key: 'numero',
+              label: 'Numéro',
+              render: (row) => <Link to={`/app/comptes/${row.id}`} className="font-medium text-primary hover:underline">{row.numero_compte}</Link>,
+            },
             { key: 'type', label: 'Type', render: (row) => libellesType[row.type_compte] },
             { key: 'solde', label: 'Solde', render: (row) => formatMontant(row.solde) },
             { key: 'statut', label: 'Statut', render: (row) => (row.statut === 'OUVERT' ? 'Ouvert' : 'Clôturé') },

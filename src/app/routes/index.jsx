@@ -7,6 +7,7 @@ import AuditPage from '@/pages/app/audit-page'
 import BanquesPage from '@/pages/app/banques-page'
 import ClientDetailPage from '@/pages/app/client-detail-page'
 import ClientsPage from '@/pages/app/clients-page'
+import CompteDetailPage from '@/pages/app/compte-detail-page'
 import ComptesPage from '@/pages/app/comptes-page'
 import DashboardPage from '@/pages/app/dashboard-page'
 import FacturesPage from '@/pages/app/factures-page'
@@ -25,6 +26,7 @@ export default function AppRoutes() {
           <Route path="/app/clients" element={<ClientsPage />} />
           <Route path="/app/clients/:id" element={<ClientDetailPage />} />
           <Route path="/app/comptes" element={<ComptesPage />} />
+          <Route path="/app/comptes/:id" element={<CompteDetailPage />} />
           <Route path="/app/operations" element={<OperationsPage />} />
           <Route path="/app/factures" element={<FacturesPage />} />
           <Route path="/app/audit" element={<AuditPage />} />
