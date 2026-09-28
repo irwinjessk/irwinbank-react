@@ -9,10 +9,20 @@ export function getClient(token, id) {
   return apiFetch(`/clients/${id}`, { token })
 }
 
-export function updateClient(token, id, { nom, prenom, email }) {
-  return apiFetch(`/clients/${id}`, { token, method: 'PATCH', body: { nom, prenom, email } })
+export function updateClient(token, id, { nom, prenom, email, conseiller }) {
+  return apiFetch(`/clients/${id}`, {
+    token,
+    method: 'PATCH',
+    body: { nom, prenom, email, conseiller: conseiller ? Number(conseiller) : null },
+  })
 }
 
-export function createClient(token, client) {
-  return apiFetch('/clients', { token, method: 'POST', body: { ...client, banque: Number(client.banque) } })
+export function changerAgence(token, id, agence) {
+  return apiFetch(`/clients/${id}/changer-agence`, { token, method: 'POST', body: { agence: Number(agence) } })
+}
+
+export function createClient(token, { agence, ...client }) {
+  const body = { ...client, banque: Number(client.banque) }
+  if (agence) body.agence = Number(agence)
+  return apiFetch('/clients', { token, method: 'POST', body })
 }

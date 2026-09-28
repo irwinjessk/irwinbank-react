@@ -4,8 +4,9 @@ import DataTable from '@/components/data/data-table'
 import StatCard from '@/components/data/stat-card'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
+import { listAgences, listAgentsAgence } from '@/features/agences/api/agences-api'
 import { useAuth } from '@/features/auth/context/auth-context'
-import { getClient, listClients, updateClient } from '@/features/clients/api/clients-api'
+import { changerAgence, getClient, listClients, updateClient } from '@/features/clients/api/clients-api'
 import { cloturerCompte, listComptes, openCompte } from '@/features/comptes/api/comptes-api'
 import ClotureDialog from '@/features/comptes/components/cloture-dialog'
 import { listTransactions } from '@/features/operations/api/operations-api'
@@ -16,7 +17,7 @@ const libellesOperation = { DEPOT: 'Dépôt', RETRAIT: 'Retrait', VIREMENT: 'Vir
 
 export default function ClientDetailPage() {
   const { id } = useParams()
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const [client, setClient] = useState(null)
   const [comptes, setComptes] = useState([])
   const [clients, setClients] = useState([])
@@ -29,6 +30,10 @@ export default function ClientDetailPage() {
   const [typeCompte, setTypeCompte] = useState('COURANT')
   const [opening, setOpening] = useState(false)
   const [aCloturer, setACloturer] = useState(null)
+  const [agences, setAgences] = useState([])
+  const [agents, setAgents] = useState([])
+  const [nouvelleAgence, setNouvelleAgence] = useState('')
+  const [moving, setMoving] = useState(false)
 
   async function load() {
     try {
@@ -42,6 +47,12 @@ export default function ClientDetailPage() {
       setComptes(tousComptes)
       setClients(tousClients)
       setOperations(mouvements.slice(0, 10))
+      const [agencesBanque, agentsAgence] = await Promise.all([
+        listAgences(token, { banque: fiche.banque }),
+        listAgentsAgence(token, fiche.agence),
+      ])
+      setAgences(agencesBanque)
+      setAgents(agentsAgence)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -72,6 +83,22 @@ export default function ClientDetailPage() {
       setError(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function deplacer(event) {
+    event.preventDefault()
+    setError('')
+    setMoving(true)
+    try {
+      const fiche = await changerAgence(token, id, nouvelleAgence)
+      setNouvelleAgence('')
+      setMessage(`Client rattaché à ${fiche.agence_nom}. Numéro et comptes inchangés.`)
+      await load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setMoving(false)
     }
   }
 
@@ -107,16 +134,24 @@ export default function ClientDetailPage() {
     )
   }
 
+  const gerable = user?.role === 'ADMIN' || user?.agence_id === client.agence
+
   return (
     <section className="space-y-6">
       <Link to="/app/clients" className="text-sm text-muted-foreground hover:underline">← Tous les clients</Link>
 
       <div className="rounded-lg border border-border bg-card p-5">
         {edition ? (
-          <form onSubmit={enregistrer} className="grid gap-3 md:grid-cols-4">
+          <form onSubmit={enregistrer} className="grid gap-3 md:grid-cols-5">
             <Field label="Nom"><input className={inputClass} value={edition.nom} onChange={(e) => setEdition({ ...edition, nom: e.target.value })} required /></Field>
             <Field label="Prénom"><input className={inputClass} value={edition.prenom} onChange={(e) => setEdition({ ...edition, prenom: e.target.value })} required /></Field>
             <Field label="E-mail"><input type="email" className={inputClass} value={edition.email} onChange={(e) => setEdition({ ...edition, email: e.target.value })} required /></Field>
+            <Field label="Conseiller">
+              <select className={inputClass} value={edition.conseiller} onChange={(e) => setEdition({ ...edition, conseiller: e.target.value })}>
+                <option value="">Aucun</option>
+                {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.username}</option>)}
+              </select>
+            </Field>
             <div className="flex items-end gap-2">
               <Button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button>
               <Button type="button" variant="outline" onClick={() => setEdition(null)} disabled={saving}>Annuler</Button>
@@ -130,19 +165,44 @@ export default function ClientDetailPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {client.email} · {client.banque_nom} · client depuis le {new Date(client.date_inscription).toLocaleDateString('fr-FR')}
               </p>
+              <p className="mt-2 text-sm">
+                Agence : <span className="font-medium">{client.agence_nom}</span>
+                {' · '}Conseiller : <span className="font-medium">{client.conseiller_nom || 'à désigner'}</span>
+              </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setMessage('')
-                setEdition({ nom: client.nom, prenom: client.prenom, email: client.email })
-              }}
-            >
-              Modifier
-            </Button>
+            {gerable ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMessage('')
+                  setEdition({ nom: client.nom, prenom: client.prenom, email: client.email, conseiller: client.conseiller ?? '' })
+                }}
+              >
+                Modifier
+              </Button>
+            ) : null}
           </div>
         )}
       </div>
+
+      {gerable ? (
+        <form onSubmit={deplacer} className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card p-4">
+          <Field label="Changer d’agence">
+            <select className={inputClass} value={nouvelleAgence} onChange={(e) => setNouvelleAgence(e.target.value)} required>
+              <option value="">Nouvelle agence</option>
+              {agences.filter((agence) => agence.id !== client.agence).map((agence) => (
+                <option key={agence.id} value={agence.id}>{agence.nom} ({agence.ville})</option>
+              ))}
+            </select>
+          </Field>
+          <Button variant="outline" disabled={moving || !nouvelleAgence}>{moving ? 'Transfert…' : 'Transférer'}</Button>
+          <p className="text-xs text-muted-foreground">Le numéro client et les comptes restent les mêmes ; le transfert est inscrit au journal.</p>
+        </form>
+      ) : (
+        <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+          Client d’une autre agence : vous pouvez effectuer ses dépôts et retraits au guichet (page Mouvements), mais pas modifier sa fiche ni ses comptes.
+        </p>
+      )}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-primary">{message}</p> : null}
@@ -156,13 +216,13 @@ export default function ClientDetailPage() {
       <div className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-sm font-medium">Comptes</h3>
-          <form onSubmit={ouvrir} className="flex items-end gap-2">
+          {gerable ? <form onSubmit={ouvrir} className="flex items-end gap-2">
             <select className={inputClass} value={typeCompte} onChange={(e) => setTypeCompte(e.target.value)} aria-label="Type de compte">
               <option value="COURANT">Courant</option>
               <option value="EPARGNE">Épargne</option>
             </select>
             <Button disabled={opening}>{opening ? 'Ouverture…' : 'Ouvrir un compte'}</Button>
-          </form>
+          </form> : null}
         </div>
         <DataTable
           rows={sesComptes}
@@ -174,7 +234,7 @@ export default function ClientDetailPage() {
             {
               key: 'action',
               label: '',
-              render: (row) => row.statut === 'OUVERT' ? (
+              render: (row) => row.statut === 'OUVERT' && gerable ? (
                 <Button variant="outline" type="button" onClick={() => { setMessage(''); setACloturer(row) }}>Clôturer</Button>
               ) : '—',
             },

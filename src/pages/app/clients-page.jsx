@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
+import { listAgences } from '@/features/agences/api/agences-api'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { listBanques } from '@/features/banques/api/banques-api'
 import { createClient, listClients } from '@/features/clients/api/clients-api'
 
-const emptyForm = { nom: '', prenom: '', email: '', banque: '' }
+const emptyForm = { nom: '', prenom: '', email: '', banque: '', agence: '' }
 
 export default function ClientsPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const agenceFiltre = searchParams.get('agence') ?? ''
   const [rows, setRows] = useState([])
   const [banques, setBanques] = useState([])
+  const [agences, setAgences] = useState([])
   const [nom, setNom] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
@@ -23,7 +28,7 @@ export default function ClientsPage() {
     setLoading(true)
     setError('')
     try {
-      setRows(await listClients(token, filtres))
+      setRows(await listClients(token, { agence: agenceFiltre, ...filtres }))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -33,8 +38,16 @@ export default function ClientsPage() {
 
   useEffect(() => {
     listBanques(token).then(setBanques).catch((err) => setError(err.message))
-    load()
+    listAgences(token).then(setAgences).catch((err) => setError(err.message))
   }, [token])
+
+  useEffect(() => {
+    load({ nom })
+  }, [token, agenceFiltre])
+
+  useEffect(() => {
+    if (!isAdmin && user?.banque_id) setForm((courant) => ({ ...courant, banque: String(user.banque_id) }))
+  }, [isAdmin, user])
 
   async function submit(event) {
     event.preventDefault()
@@ -42,8 +55,8 @@ export default function ClientsPage() {
     setSaving(true)
     try {
       await createClient(token, form)
-      setForm(emptyForm)
-      await load()
+      setForm({ ...emptyForm, banque: isAdmin ? '' : form.banque })
+      await load({ nom })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -51,22 +64,53 @@ export default function ClientsPage() {
     }
   }
 
+  const agencesDeLaBanque = agences.filter((agence) => String(agence.banque) === form.banque)
+
   return (
     <section className="space-y-6">
-      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-5">
+      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-6">
         <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
         <Field label="Prénom"><input className={inputClass} value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} required /></Field>
         <Field label="E-mail"><input type="email" className={inputClass} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></Field>
         <Field label="Banque">
-          <select className={inputClass} value={form.banque} onChange={(e) => setForm({ ...form, banque: e.target.value })} required>
+          <select
+            className={inputClass}
+            value={form.banque}
+            onChange={(e) => setForm({ ...form, banque: e.target.value, agence: '' })}
+            required
+            disabled={!isAdmin}
+          >
             <option value="">Choisir</option>
             {banques.map((banque) => <option key={banque.id} value={banque.id}>{banque.nom}</option>)}
           </select>
         </Field>
+        {isAdmin ? (
+          <Field label="Agence">
+            <select className={inputClass} value={form.agence} onChange={(e) => setForm({ ...form, agence: e.target.value })}>
+              <option value="">Agence principale</option>
+              {agencesDeLaBanque.map((agence) => <option key={agence.id} value={agence.id}>{agence.nom}</option>)}
+            </select>
+          </Field>
+        ) : (
+          <Field label="Agence">
+            <input className={inputClass} value={user?.agence_nom ?? ''} disabled />
+          </Field>
+        )}
         <div className="flex items-end"><Button disabled={saving}>{saving ? 'Inscription…' : 'Inscrire'}</Button></div>
       </form>
-      <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); load({ nom }) }}>
+      <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); load({ nom }) }}>
         <input className={inputClass} placeholder="Nom, prénom" value={nom} onChange={(e) => setNom(e.target.value)} />
+        <select
+          className={inputClass}
+          value={agenceFiltre}
+          onChange={(e) => setSearchParams(e.target.value ? { agence: e.target.value } : {})}
+          aria-label="Filtrer par agence"
+        >
+          <option value="">Toutes les agences</option>
+          {agences.map((agence) => (
+            <option key={agence.id} value={agence.id}>{isAdmin ? `${agence.banque_nom} · ${agence.nom}` : agence.nom}</option>
+          ))}
+        </select>
         <Button type="submit" variant="outline">Rechercher</Button>
       </form>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -86,6 +130,8 @@ export default function ClientsPage() {
             },
             { key: 'email', label: 'E-mail', render: (row) => row.email },
             { key: 'banque', label: 'Banque', render: (row) => row.banque_nom },
+            { key: 'agence', label: 'Agence', render: (row) => row.agence_nom },
+            { key: 'conseiller', label: 'Conseiller', render: (row) => row.conseiller_nom || '—' },
             {
               key: 'fiche',
               label: '',

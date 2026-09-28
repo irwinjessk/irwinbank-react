@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from '@/components/layout/app-shell'
 import ProtectedRoute from '@/features/auth/components/protected-route'
 import LoginPage from '@/pages/auth/login-page'
+import AgencesPage from '@/pages/app/agences-page'
 import AuditPage from '@/pages/app/audit-page'
 import BanquesPage from '@/pages/app/banques-page'
 import ClientDetailPage from '@/pages/app/client-detail-page'
@@ -20,6 +21,7 @@ export default function AppRoutes() {
         <Route element={<AppShell />}>
           <Route path="/app" element={<DashboardPage />} />
           <Route path="/app/banques" element={<BanquesPage />} />
+          <Route path="/app/agences" element={<AgencesPage />} />
           <Route path="/app/clients" element={<ClientsPage />} />
           <Route path="/app/clients/:id" element={<ClientDetailPage />} />
           <Route path="/app/comptes" element={<ComptesPage />} />

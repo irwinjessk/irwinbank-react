@@ -96,6 +96,7 @@ export default function ComptesPage() {
           columns={[
             { key: 'numero', label: 'Numéro', render: (row) => row.numero_compte },
             { key: 'client', label: 'Client', render: (row) => nomClient(row.client) },
+            { key: 'agence', label: 'Agence', render: (row) => row.agence_nom },
             { key: 'type', label: 'Type', render: (row) => row.type_compte },
             { key: 'solde', label: 'Solde', render: (row) => formatMontant(row.solde) },
             { key: 'statut', label: 'Statut', render: (row) => row.statut },
