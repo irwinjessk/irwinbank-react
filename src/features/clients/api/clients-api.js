@@ -26,3 +26,7 @@ export function createClient(token, { agence, ...client }) {
   if (agence) body.agence = Number(agence)
   return apiFetch('/clients', { token, method: 'POST', body })
 }
+
+export function deleteClient(token, id) {
+  return apiFetch(`/clients/${id}`, { token, method: 'DELETE' })
+}

@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
-import { listAgences, createAgence } from '@/features/agences/api/agences-api'
+import { createAgence, deleteAgence, listAgences, updateAgence } from '@/features/agences/api/agences-api'
 import ConseillersPanel from '@/features/agences/components/conseillers-panel'
 import { useAuth } from '@/features/auth/context/auth-context'
 import { listBanques } from '@/features/banques/api/banques-api'
 
 const emptyForm = { nom: '', ville: '', banque: '' }
+const AGENCE_PRINCIPALE = 'Agence principale'
 
 export default function AgencesPage() {
   const { token, user } = useAuth()
@@ -21,6 +22,8 @@ export default function AgencesPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selection, setSelection] = useState(null)
+  const [edition, setEdition] = useState(null)
+  const [message, setMessage] = useState('')
 
   async function load(filtreBanque = banque, silencieux = false) {
     if (!silencieux) setLoading(true)
@@ -39,13 +42,38 @@ export default function AgencesPage() {
     load()
   }, [token])
 
+  function annulerEdition() {
+    setEdition(null)
+    setForm(emptyForm)
+  }
+
+  async function action(requete, succes) {
+    setError('')
+    setMessage('')
+    try {
+      await requete()
+      setMessage(succes)
+      await load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   async function submit(event) {
     event.preventDefault()
     setError('')
+    setMessage('')
     setSaving(true)
     try {
-      await createAgence(token, form)
-      setForm(emptyForm)
+      if (edition) {
+        const changements = { ville: form.ville }
+        if (edition.nom !== AGENCE_PRINCIPALE) changements.nom = form.nom
+        await updateAgence(token, edition.id, changements)
+        setMessage(`Agence « ${form.nom} » mise à jour.`)
+      } else {
+        await createAgence(token, form)
+      }
+      annulerEdition()
       await load()
     } catch (err) {
       setError(err.message)
@@ -58,15 +86,26 @@ export default function AgencesPage() {
     <section className="space-y-6">
       {isAdmin ? (
         <form onSubmit={submit} className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4">
-          <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
+          <Field label="Nom">
+            <input
+              className={inputClass}
+              value={form.nom}
+              onChange={(e) => setForm({ ...form, nom: e.target.value })}
+              disabled={edition?.nom === AGENCE_PRINCIPALE}
+              required
+            />
+          </Field>
           <Field label="Ville"><input className={inputClass} value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} required /></Field>
           <Field label="Banque">
-            <select className={inputClass} value={form.banque} onChange={(e) => setForm({ ...form, banque: e.target.value })} required>
+            <select className={inputClass} value={form.banque} onChange={(e) => setForm({ ...form, banque: e.target.value })} required disabled={Boolean(edition)}>
               <option value="">Choisir</option>
               {banques.map((item) => <option key={item.id} value={item.id}>{item.nom}</option>)}
             </select>
           </Field>
-          <div className="flex items-end"><Button disabled={saving}>{saving ? 'Enregistrement…' : 'Créer l’agence'}</Button></div>
+          <div className="flex items-end gap-2">
+            <Button disabled={saving}>{saving ? 'Enregistrement…' : edition ? 'Mettre à jour' : 'Créer l’agence'}</Button>
+            {edition ? <Button type="button" variant="outline" onClick={annulerEdition}>Annuler</Button> : null}
+          </div>
         </form>
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -91,6 +130,7 @@ export default function AgencesPage() {
         </div>
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {message ? <p className="text-sm text-primary">{message}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
         <DataTable
           rows={rows}
@@ -109,6 +149,7 @@ export default function AgencesPage() {
             { key: 'banque', label: 'Banque', render: (row) => row.banque_nom },
             { key: 'agents', label: 'Agents', render: (row) => row.nombre_agents },
             { key: 'clients', label: 'Clients', render: (row) => row.nombre_clients },
+            { key: 'statut', label: 'Statut', render: (row) => (row.actif ? 'Active' : 'Désactivée') },
             {
               key: 'voir',
               label: '',
@@ -117,6 +158,41 @@ export default function AgencesPage() {
                   <Link to={`/app/clients?agence=${row.id}`} className="text-sm text-muted-foreground hover:underline">Ses clients →</Link>
                   {isAdmin || row.id === user?.agence_id ? (
                     <Button type="button" variant="outline" onClick={() => setSelection(row)}>Conseillers</Button>
+                  ) : null}
+                  {isAdmin ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setMessage('')
+                        setEdition(row)
+                        setForm({ nom: row.nom, ville: row.ville, banque: String(row.banque) })
+                      }}
+                    >
+                      Modifier
+                    </Button>
+                  ) : null}
+                  {isAdmin && row.nom !== AGENCE_PRINCIPALE ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => action(() => updateAgence(token, row.id, { actif: !row.actif }), `Agence « ${row.nom} » ${row.actif ? 'désactivée' : 'réactivée'}.`)}
+                      >
+                        {row.actif ? 'Désactiver' : 'Réactiver'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => {
+                          if (window.confirm(`Supprimer l’agence « ${row.nom} » ?`)) {
+                            action(() => deleteAgence(token, row.id), `Agence « ${row.nom} » supprimée.`)
+                          }
+                        }}
+                      >
+                        Supprimer
+                      </Button>
+                    </>
                   ) : null}
                 </div>
               ),

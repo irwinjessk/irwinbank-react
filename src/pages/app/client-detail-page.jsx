@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import StatCard from '@/components/data/stat-card'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { listAgences, listAgentsAgence } from '@/features/agences/api/agences-api'
 import { useAuth } from '@/features/auth/context/auth-context'
-import { changerAgence, getClient, listClients, updateClient } from '@/features/clients/api/clients-api'
+import { changerAgence, deleteClient, getClient, listClients, updateClient } from '@/features/clients/api/clients-api'
 import { cloturerCompte, listComptes, openCompte } from '@/features/comptes/api/comptes-api'
 import ClotureDialog from '@/features/comptes/components/cloture-dialog'
 import { listTransactions } from '@/features/operations/api/operations-api'
@@ -17,6 +17,7 @@ const libellesOperation = { DEPOT: 'Dépôt', RETRAIT: 'Retrait', VIREMENT: 'Vir
 
 export default function ClientDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { token, user } = useAuth()
   const [client, setClient] = useState(null)
   const [comptes, setComptes] = useState([])
@@ -83,6 +84,18 @@ export default function ClientDetailPage() {
       setError(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function supprimer() {
+    if (!window.confirm(`Supprimer définitivement la fiche de ${client.prenom} ${client.nom} ?`)) return
+    setError('')
+    setMessage('')
+    try {
+      await deleteClient(token, id)
+      navigate('/app/clients', { replace: true })
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -171,15 +184,18 @@ export default function ClientDetailPage() {
               </p>
             </div>
             {gerable ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setMessage('')
-                  setEdition({ nom: client.nom, prenom: client.prenom, email: client.email, conseiller: client.conseiller ?? '' })
-                }}
-              >
-                Modifier
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMessage('')
+                    setEdition({ nom: client.nom, prenom: client.prenom, email: client.email, conseiller: client.conseiller ?? '' })
+                  }}
+                >
+                  Modifier
+                </Button>
+                {sesComptes.length === 0 ? <Button variant="destructive" onClick={supprimer}>Supprimer</Button> : null}
+              </div>
             ) : null}
           </div>
         )}

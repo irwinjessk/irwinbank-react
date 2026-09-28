@@ -18,7 +18,7 @@ export default function ClientsPage() {
   const [rows, setRows] = useState([])
   const [banques, setBanques] = useState([])
   const [agences, setAgences] = useState([])
-  const [nom, setNom] = useState('')
+  const [recherche, setRecherche] = useState({ nom: '', email: '', numero_client: '' })
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -42,7 +42,7 @@ export default function ClientsPage() {
   }, [token])
 
   useEffect(() => {
-    load({ nom })
+    load(recherche)
   }, [token, agenceFiltre])
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function ClientsPage() {
     try {
       await createClient(token, form)
       setForm({ ...emptyForm, banque: isAdmin ? '' : form.banque })
-      await load({ nom })
+      await load(recherche)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -64,7 +64,7 @@ export default function ClientsPage() {
     }
   }
 
-  const agencesDeLaBanque = agences.filter((agence) => String(agence.banque) === form.banque)
+  const agencesDeLaBanque = agences.filter((agence) => String(agence.banque) === form.banque && agence.actif)
 
   return (
     <section className="space-y-6">
@@ -81,7 +81,7 @@ export default function ClientsPage() {
             disabled={!isAdmin}
           >
             <option value="">Choisir</option>
-            {banques.map((banque) => <option key={banque.id} value={banque.id}>{banque.nom}</option>)}
+            {banques.filter((banque) => banque.actif || String(banque.id) === form.banque).map((banque) => <option key={banque.id} value={banque.id}>{banque.nom}</option>)}
           </select>
         </Field>
         {isAdmin ? (
@@ -98,8 +98,10 @@ export default function ClientsPage() {
         )}
         <div className="flex items-end"><Button disabled={saving}>{saving ? 'Inscription…' : 'Inscrire'}</Button></div>
       </form>
-      <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); load({ nom }) }}>
-        <input className={inputClass} placeholder="Nom, prénom" value={nom} onChange={(e) => setNom(e.target.value)} />
+      <form className="flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); load(recherche) }}>
+        <input className={inputClass} placeholder="Nom, prénom" value={recherche.nom} onChange={(e) => setRecherche({ ...recherche, nom: e.target.value })} />
+        <input className={inputClass} placeholder="E-mail" value={recherche.email} onChange={(e) => setRecherche({ ...recherche, email: e.target.value })} />
+        <input className={inputClass} placeholder="Numéro client" value={recherche.numero_client} onChange={(e) => setRecherche({ ...recherche, numero_client: e.target.value })} />
         <select
           className={inputClass}
           value={agenceFiltre}

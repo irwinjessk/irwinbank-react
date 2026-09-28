@@ -3,7 +3,7 @@ import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
-import { createBanque, listBanques, topBanques } from '@/features/banques/api/banques-api'
+import { createBanque, deleteBanque, listBanques, topBanques, updateBanque } from '@/features/banques/api/banques-api'
 
 export default function BanquesPage() {
   const { token, user } = useAuth()
@@ -14,6 +14,8 @@ export default function BanquesPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [message, setMessage] = useState('')
 
   async function load(request = () => listBanques(token)) {
     setLoading(true)
@@ -31,13 +33,36 @@ export default function BanquesPage() {
     load()
   }, [token])
 
+  function annulerEdition() {
+    setEditId(null)
+    setForm({ nom: '', pays: '', ville: '' })
+  }
+
+  async function action(requete, succes) {
+    setError('')
+    setMessage('')
+    try {
+      await requete()
+      setMessage(succes)
+      await load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   async function submit(event) {
     event.preventDefault()
     setError('')
+    setMessage('')
     setSaving(true)
     try {
-      await createBanque(token, form)
-      setForm({ nom: '', pays: '', ville: '' })
+      if (editId) {
+        await updateBanque(token, editId, form)
+        setMessage(`Banque « ${form.nom} » mise à jour.`)
+      } else {
+        await createBanque(token, form)
+      }
+      annulerEdition()
       await load()
     } catch (err) {
       setError(err.message)
@@ -53,7 +78,10 @@ export default function BanquesPage() {
           <Field label="Nom"><input className={inputClass} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required /></Field>
           <Field label="Pays"><input className={inputClass} value={form.pays} onChange={(e) => setForm({ ...form, pays: e.target.value })} required /></Field>
           <Field label="Ville"><input className={inputClass} value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} required /></Field>
-          <div className="flex items-end"><Button disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button></div>
+          <div className="flex items-end gap-2">
+            <Button disabled={saving}>{saving ? 'Enregistrement…' : editId ? 'Mettre à jour' : 'Enregistrer'}</Button>
+            {editId ? <Button type="button" variant="outline" onClick={annulerEdition}>Annuler</Button> : null}
+          </div>
         </form>
       ) : null}
       {isAdmin ? (
@@ -71,6 +99,7 @@ export default function BanquesPage() {
         </form>
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {message ? <p className="text-sm text-primary">{message}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
         <DataTable
           rows={rows}
@@ -79,6 +108,44 @@ export default function BanquesPage() {
             { key: 'pays', label: 'Pays', render: (row) => row.pays },
             { key: 'ville', label: 'Ville', render: (row) => row.ville },
             { key: 'clients', label: 'Clients', render: (row) => row.nombre_clients },
+            { key: 'statut', label: 'Statut', render: (row) => (row.actif ? 'Active' : 'Désactivée') },
+            ...(isAdmin ? [{
+              key: 'actions',
+              label: '',
+              render: (row) => (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setMessage('')
+                      setEditId(row.id)
+                      setForm({ nom: row.nom, pays: row.pays, ville: row.ville })
+                    }}
+                  >
+                    Modifier
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => action(() => updateBanque(token, row.id, { actif: !row.actif }), `Banque « ${row.nom} » ${row.actif ? 'désactivée' : 'réactivée'}.`)}
+                  >
+                    {row.actif ? 'Désactiver' : 'Réactiver'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      if (window.confirm(`Supprimer définitivement la banque « ${row.nom} » ?`)) {
+                        action(() => deleteBanque(token, row.id), `Banque « ${row.nom} » supprimée.`)
+                      }
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ),
+            }] : []),
           ]}
         />
       )}

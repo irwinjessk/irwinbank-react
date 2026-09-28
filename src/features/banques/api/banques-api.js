@@ -12,3 +12,11 @@ export function topBanques(token) {
 export function createBanque(token, banque) {
   return apiFetch('/banques', { token, method: 'POST', body: banque })
 }
+
+export function updateBanque(token, id, changements) {
+  return apiFetch(`/banques/${id}`, { token, method: 'PATCH', body: changements })
+}
+
+export function deleteBanque(token, id) {
+  return apiFetch(`/banques/${id}`, { token, method: 'DELETE' })
+}
