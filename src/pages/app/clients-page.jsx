@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
@@ -74,8 +75,22 @@ export default function ClientsPage() {
           rows={rows}
           columns={[
             { key: 'numero', label: 'Numéro', render: (row) => row.numero_client },
-            { key: 'nom', label: 'Client', render: (row) => `${row.prenom} ${row.nom}` },
+            {
+              key: 'nom',
+              label: 'Client',
+              render: (row) => (
+                <Link to={`/app/clients/${row.id}`} className="font-medium text-primary underline-offset-4 hover:underline">
+                  {row.prenom} {row.nom}
+                </Link>
+              ),
+            },
             { key: 'email', label: 'E-mail', render: (row) => row.email },
+            { key: 'banque', label: 'Banque', render: (row) => row.banque_nom },
+            {
+              key: 'fiche',
+              label: '',
+              render: (row) => <Link to={`/app/clients/${row.id}`} className="text-sm text-muted-foreground hover:underline">Voir la fiche →</Link>,
+            },
           ]}
         />
       )}

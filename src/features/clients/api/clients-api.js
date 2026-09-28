@@ -5,6 +5,14 @@ export function listClients(token, filtres = {}) {
   return apiFetch(`/clients${params.size ? `?${params}` : ''}`, { token })
 }
 
+export function getClient(token, id) {
+  return apiFetch(`/clients/${id}`, { token })
+}
+
+export function updateClient(token, id, { nom, prenom, email }) {
+  return apiFetch(`/clients/${id}`, { token, method: 'PATCH', body: { nom, prenom, email } })
+}
+
 export function createClient(token, client) {
   return apiFetch('/clients', { token, method: 'POST', body: { ...client, banque: Number(client.banque) } })
 }

@@ -4,6 +4,7 @@ import ProtectedRoute from '@/features/auth/components/protected-route'
 import LoginPage from '@/pages/auth/login-page'
 import AuditPage from '@/pages/app/audit-page'
 import BanquesPage from '@/pages/app/banques-page'
+import ClientDetailPage from '@/pages/app/client-detail-page'
 import ClientsPage from '@/pages/app/clients-page'
 import ComptesPage from '@/pages/app/comptes-page'
 import DashboardPage from '@/pages/app/dashboard-page'
@@ -20,6 +21,7 @@ export default function AppRoutes() {
           <Route path="/app" element={<DashboardPage />} />
           <Route path="/app/banques" element={<BanquesPage />} />
           <Route path="/app/clients" element={<ClientsPage />} />
+          <Route path="/app/clients/:id" element={<ClientDetailPage />} />
           <Route path="/app/comptes" element={<ComptesPage />} />
           <Route path="/app/operations" element={<OperationsPage />} />
           <Route path="/app/factures" element={<FacturesPage />} />
