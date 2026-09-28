@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
+import ExportButtons from '@/components/data/export-buttons'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { listAgences } from '@/features/agences/api/agences-api'
@@ -24,12 +25,15 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [appliques, setAppliques] = useState({})
 
   async function load(filtres = {}) {
     setLoading(true)
     setError('')
     try {
-      setRows(await listClients(token, { agence: agenceFiltre, ...filtres }))
+      const criteres = { agence: agenceFiltre, ...filtres }
+      setRows(await listClients(token, criteres))
+      setAppliques(criteres)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -129,6 +133,7 @@ export default function ClientsPage() {
         </select>
         <Button type="submit" variant="outline">Rechercher</Button>
       </form>
+      <ExportButtons ressource="clients" filtres={appliques} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-primary">{message}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (

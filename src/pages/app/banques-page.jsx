@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import DataTable from '@/components/data/data-table'
+import ExportButtons from '@/components/data/export-buttons'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -15,6 +16,7 @@ export default function BanquesPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState(null)
+  const [appliques, setAppliques] = useState({})
   const [message, setMessage] = useState('')
 
   async function load(request = () => listBanques(token)) {
@@ -93,6 +95,7 @@ export default function BanquesPage() {
           className="flex flex-wrap gap-2"
           onSubmit={(event) => {
             event.preventDefault()
+            setAppliques(filtres)
             load(() => listBanques(token, filtres))
           }}
         >
@@ -102,6 +105,7 @@ export default function BanquesPage() {
           <Button type="button" variant="outline" onClick={() => load(() => topBanques(token))}>Top 15</Button>
         </form>
       ) : null}
+      <ExportButtons ressource="banques" filtres={appliques} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-primary">{message}</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (

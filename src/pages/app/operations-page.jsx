@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
+import ExportButtons from '@/components/data/export-buttons'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -20,6 +21,7 @@ export default function OperationsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [filtres, setFiltres] = useState(filtresVides)
+  const [appliques, setAppliques] = useState({})
 
   const comptesOuverts = comptes.filter((compte) => compte.statut === 'OUVERT')
 
@@ -28,6 +30,7 @@ export default function OperationsPage() {
     setError('')
     try {
       setRows(await listTransactions(token, criteres))
+      setAppliques(criteres)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -126,6 +129,7 @@ export default function OperationsPage() {
           Réinitialiser
         </Button>
       </form>
+      <ExportButtons ressource="transactions" filtres={appliques} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {!loading ? <p className="text-xs text-muted-foreground">{rows.length} mouvement(s)</p> : null}
       {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : (

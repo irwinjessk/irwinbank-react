@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import DataTable from '@/components/data/data-table'
+import ExportButtons from '@/components/data/export-buttons'
 import Field, { inputClass } from '@/components/forms/field'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/context/auth-context'
@@ -96,6 +97,7 @@ export default function ComptesPage() {
         </select>
         {!loading ? <span className="text-xs text-muted-foreground">{rows.length} compte(s)</span> : null}
       </div>
+      <ExportButtons ressource="comptes" filtres={{ client: clientFiltre }} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-primary">{message}</p> : null}
       {aCloturer ? (
